@@ -73,6 +73,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Install AWS CLI
+        run: |
+          if ! command -v aws >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install --yes awscli
+          fi
+          aws --version
       - name: Verify deployment EC2 instance
         env:
           EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
