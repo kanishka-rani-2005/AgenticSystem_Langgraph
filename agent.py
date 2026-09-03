@@ -78,7 +78,7 @@ def build_agent(model_name:str):
     llm_with_tools=llm.bind_tools(tools)
 
     def chatbot_node(state:MessagesState):
-        messages =[SystemMessage(content=SYSTEM_PROMPT)+state['messages']]
+        messages =[SystemMessage(content=SYSTEM_PROMPT)]+state['messages']
         response = llm_with_tools.invoke(messages)
         return {
             "messages":[response]

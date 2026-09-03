@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <title>ChatsGPT — AI workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='fixes.css') }}">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-row">
+      <a class="brand" href="/" aria-label="Chatsgpt home"><span class="brand-mark">✦</span><span>Chatsgpt</span></a>
+      <button class="icon-button mobile-only" id="closeSidebar" aria-label="Close menu">×</button>
+    </div>
+    <button class="new-chat" id="newChat"><span>＋</span> New conversation <kbd>⌘ K</kbd></button>
+    <div class="sidebar-label">Your conversations</div>
+    <nav class="conversation-list" id="conversationList" aria-label="Conversation history"></nav>
+    <div class="sidebar-footer"><div class="profile-avatar">C</div><div><strong>ChatsGPT</strong><span>Your AI workspace</span></div><button class="more-button" aria-label="More options">•••</button></div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-button menu-button" id="menuButton" aria-label="Open menu">☰</button>
+      <div class="workspace-title"><span>ChatsGPT</span><span class="chevron">⌄</span></div>
+      <div class="connection-status" id="status"><i></i> Ready</div>
+    </header>
+
+    <section class="chat-container" id="chatContainer" aria-live="polite">
+      <div class="welcome" id="welcome">
+        <div class="welcome-orb">✦</div>
+        <p class="eyebrow">YOUR INTELLIGENT WORKSPACE</p>
+        <h1>What would you like to<br><em>explore</em> today?</h1>
+        <p class="welcome-copy">Search the web, understand your documents, and turn ideas into outcomes — all in one focused space.</p>
+      </div>
+      <div class="prompt-grid" id="cards">
+        <button class="prompt-card" data-prompt="Search the web for the latest AI agent news."><span class="card-icon violet">⌘</span><span><strong>Research a topic</strong><small>Search for current information</small></span><b>→</b></button>
+        <button class="prompt-card" data-prompt="Summarize the document I uploaded."><span class="card-icon orange">▤</span><span><strong>Understand a document</strong><small>Upload a file and ask questions</small></span><b>→</b></button>
+        <button class="prompt-card" data-prompt="Calculate 125 * 48 / 6"><span class="card-icon teal">✣</span><span><strong>Solve a problem</strong><small>Use tools to get things done</small></span><b>→</b></button>
+      </div>
+    </section>
+
+    <footer class="composer-area">
+      <div class="composer-shell">
+        <input type="file" id="fileInput" hidden accept=".pdf,.docx,.txt,.md,.py,.csv,.json">
+        <button class="composer-icon" id="attachButton" title="Upload document" aria-label="Upload document">＋</button>
+        <textarea id="messageInput" rows="1" placeholder="Message ChatsGPT" aria-label="Message"></textarea>
+        <div class="composer-actions">
+          <select id="modelSelect" aria-label="Select model"><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option><option value="gemini-2.5-pro">Gemini 2.5 Pro</option><option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option><option value="gemini-1.5-flash">Gemini 1.5 Flash</option><option value="gemini-1.5-pro">Gemini 1.5 Pro</option></select>
+          <button class="composer-icon mic-button" id="micBtn" title="Dictate" aria-label="Start dictation">♩</button>
+          <button class="send-button" id="sendBtn" title="Send message" aria-label="Send message">↑</button>
+        </div>
+      </div>
+      <p class="notice" id="noticeText">ChatsGPT can make mistakes. Check important information.</p>
+    </footer>
+  </main>
+  <script src="{{ url_for('static', path='formatting.js') }}" defer></script>
+  <script src="{{ url_for('static', path='app.js') }}" defer></script>
+</body>
+</html>

@@ -8,6 +8,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI,GoogleGenerativeAIEmbe
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
+from langchain_core.messages import SystemMessage
 
 from pypdf import PdfReader
 import docx2txt
@@ -90,6 +91,16 @@ def add_document_to_rag(file_path:str,thread_id:str):
         "filename":Path(file_path).name,
         "chunks":len(docs)
     }
+
+
+def thread_has_documents(thread_id: str) -> bool:
+    """Return whether a conversation has at least one indexed document."""
+    result = vectorstore.get(
+        where={"thread_id": thread_id},
+        limit=1,
+        include=[]
+    )
+    return bool(result.get("ids"))
 
 
 # This function retrieves relevant documents from the RAG(Retrieval-Augmented Generation) system based on a query and a thread ID.
