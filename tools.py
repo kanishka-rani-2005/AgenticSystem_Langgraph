@@ -1,7 +1,10 @@
 import math
 from dotenv import load_dotenv
+from httpx2 import query
 from langchain_core.tools import tool
 from langchain_tavily import TavilySearch
+from database import save_memory, search_memory
+from rag import retrieve_from_rag
 
 
 load_dotenv()
@@ -39,19 +42,20 @@ def search_uploaded_documents(query:str)->str:
     """
     A tool to search uploaded documents using RAG (Retrieval-Augmented Generation).
     """
-    # Placeholder implementation for searching uploaded documents
-    # In a real implementation, this would interface with a document retrieval system
-    return f"Searching uploaded documents for: {query}"
-
+    return retrieve_from_rag(
+        query=query,
+        thread_id=CURRENT_THREAD_ID
+    )
 
 @tool
 def remember_this(memory:str)->str:
     """
     A tool to remember important user information.
     """
-    # Placeholder implementation for remembering information
-    # In a real implementation, this would store the memory in a database or memory system
-    return f"Remembered: {memory}"
+    return save_memory(
+        thread_id=CURRENT_THREAD_ID,
+        memory=memory
+    )
 
 
 @tool
@@ -59,9 +63,10 @@ def recall_memory(query:str)->str:
     """
     A tool to recall previously remembered information.
     """
-    # Placeholder implementation for recalling memory
-    # In a real implementation, this would retrieve the memory from a database or memory system
-    return f"Recalling memory for: {query}"
+    return search_memory(
+        thread_id=CURRENT_THREAD_ID,
+        query=query
+    )
 
 
 tools=[
