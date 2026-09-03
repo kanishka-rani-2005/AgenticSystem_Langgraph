@@ -51,7 +51,14 @@
         <button class="composer-icon" id="attachButton" title="Upload document" aria-label="Upload document">＋</button>
         <textarea id="messageInput" rows="1" placeholder="Message ChatsGPT" aria-label="Message"></textarea>
         <div class="composer-actions">
-          <select id="modelSelect" aria-label="Select model"><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option><option value="gemini-2.5-pro">Gemini 2.5 Pro</option><option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option><option value="gemini-1.5-flash">Gemini 1.5 Flash</option><option value="gemini-1.5-pro">Gemini 1.5 Pro</option></select>
+          <select id="modelSelect" aria-label="Select model">
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (default)</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+            <option value="gemini-3.5-flash-image">Gemini 3.5 Flash Image</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+          </select>
           <button class="composer-icon mic-button" id="micBtn" title="Dictate" aria-label="Start dictation">♩</button>
           <button class="send-button" id="sendBtn" title="Send message" aria-label="Send message">↑</button>
         </div>

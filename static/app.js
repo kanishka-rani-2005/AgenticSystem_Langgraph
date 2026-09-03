@@ -3,7 +3,12 @@ const chatContainer = $("#chatContainer"), messageInput = $("#messageInput"), se
 let threadId = localStorage.getItem("thread_id") || crypto.randomUUID();
 let recognition, isDictating = false;
 localStorage.setItem("thread_id", threadId);
-modelSelect.value = localStorage.getItem("selected_model") || modelSelect.value;
+const savedModel = localStorage.getItem("selected_model");
+if (savedModel && [...modelSelect.options].some((option) => option.value === savedModel)) {
+  modelSelect.value = savedModel;
+} else {
+  localStorage.setItem("selected_model", modelSelect.value);
+}
 
 function setStatus(text, thinking = false) { statusText.innerHTML = `<i></i> ${text}`; statusText.classList.toggle("thinking", thinking); }
 function autoResize() { messageInput.style.height = "auto"; messageInput.style.height = `${Math.min(messageInput.scrollHeight, 160)}px`; }
