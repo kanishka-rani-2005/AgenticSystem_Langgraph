@@ -223,7 +223,7 @@ async def chat_stream(request: Request):
 
     user_message = data.get("message", "")
     thread_id = data.get("thread_id", "default")
-    selected_model = data.get("model", "gemini-2.5-flash")
+    selected_model = data.get("model") or "gemini-3.5-flash-lite"
 
     if not user_message.strip():
         return JSONResponse(
