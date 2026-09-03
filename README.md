@@ -12,6 +12,20 @@ ChatsGPT is an agentic AI chatbot built with FastAPI, LangGraph, Google Gemini, 
 - Voice dictation where supported by the browser
 - Docker support and GitHub Actions deployment to EC2 via Docker Hub
 
+## Screenshots
+
+### Home
+
+![ChatsGPT home screen](frontend.pics/home.png)
+
+### Document upload
+
+![ChatsGPT document upload](frontend.pics/uploaded_file.png)
+
+### Code-related response
+
+![ChatsGPT code response](frontend.pics/code_related.png)
+
 ## Tech stack
 
 | Area | Technology |
