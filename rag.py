@@ -18,10 +18,12 @@ Path("uploads").mkdir(exist_ok=True)
 Path("chroma_db").mkdir(exist_ok=True)
 
 
+# Gemini embedding model
 embeddings = GoogleGenerativeAIEmbeddings(
     model="gemini-embedding-001"
 )
 
+# Vectorstore
 vectorstore = Chroma(
     collection_name="agentic_chatbot_docs",
     embedding_function=embeddings,
@@ -29,6 +31,7 @@ vectorstore = Chroma(
 )
 
 
+# This function reads the content of a file based on its type (PDF, DOCX, TXT, MD, PY, CSV, JSON) and returns the text content. It raises an error for unsupported file types.
 def read_file_text(file_path:str)->str:
     path=Path(file_path)
     suffix=path.suffix.lower()
@@ -53,7 +56,8 @@ def read_file_text(file_path:str)->str:
 
 
 
-
+# This function adds a document to the RAG system by reading the file, splitting it into chunks, and storing those chunks in a vector store for later retrieval. 
+# It returns the filename and the number of chunks created.
 def add_document_to_rag(file_path:str,thread_id:str):
     text=read_file_text(file_path)
 
@@ -88,6 +92,9 @@ def add_document_to_rag(file_path:str,thread_id:str):
     }
 
 
+# This function retrieves relevant documents from the RAG(Retrieval-Augmented Generation) system based on a query and a thread ID.
+# It performs a similarity search in the vector store and returns the content of the most relevant documents, along with their sources.
+# If no relevant documents are found, it returns a message indicating that.
 def retrieve_from_rag(query:str,thread_id:str,k:int=4)->str:
     docs=vectorstore.similarity_search(
         query,
