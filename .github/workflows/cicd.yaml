@@ -6,9 +6,11 @@ on:
     paths-ignore: ["README.md"]
   workflow_dispatch:
 
+    
 concurrency:
   group: chatsgpt-production
   cancel-in-progress: true
+
 
 permissions:
   contents: read
