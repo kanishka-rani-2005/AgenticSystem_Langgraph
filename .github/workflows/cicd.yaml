@@ -1,46 +1,72 @@
-name: Deploy FastAPI Docker Image to EC2
+name: ChatsGPT Docker Hub CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+    paths-ignore: ["README.md"]
+  workflow_dispatch:
+
+concurrency:
+  group: chatsgpt-production
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  Continuous-Integration:
+  integration:
+    name: Continuous Integration
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout source code
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          python-version: "3.11"
+      - name: Check Python syntax
+        run: python -m py_compile app.py agent.py rag.py tools.py database.py
+      - name: Validate Docker build
+        run: docker build --tag chatsgpt:ci .
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push Docker image to Amazon ECR
+  push_to_registry:
+    name: Build and Push Docker Image
+    needs: integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate Docker Hub settings
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
-          IMAGE_TAG: latest
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
         run: |
-          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          test -n "$DOCKER_USERNAME" || { echo "DOCKER_USERNAME is missing."; exit 1; }
+          test -n "$DOCKER_PASSWORD" || { echo "DOCKER_PASSWORD is missing."; exit 1; }
+          test -n "$IMAGE_NAME" || { echo "IMAGE_NAME is missing."; exit 1; }
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:main
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-          echo "Building image: $IMAGE_URI"
-
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
-  Continuous-Deployment:
-    needs: Continuous-Integration
+  continuous_deployment:
+    name: Deploy to EC2
+    needs: push_to_registry
     runs-on: self-hosted
-
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -48,43 +74,73 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Pull latest Docker image from ECR
+      - name: Verify deployment EC2 instance
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
-          IMAGE_TAG: latest
+          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
         run: |
-          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Stop and remove old container
-        run: |
-          docker stop agentic-chatbot || true
-          docker rm agentic-chatbot || true
-
-      - name: Run new Docker container
+          test -n "$EC2_INSTANCE_ID" || { echo "EC2_INSTANCE_ID is missing."; exit 1; }
+          aws ec2 describe-instances \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --query "Reservations[0].Instances[0].State.Name" \
+            --output text | grep -qx "running"
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Validate application secrets
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPO }}
-          IMAGE_TAG: latest
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
+          test -n "$GOOGLE_API_KEY" || { echo "GOOGLE_API_KEY is missing."; exit 1; }
+          test -n "$TAVILY_API_KEY" || { echo "TAVILY_API_KEY is missing."; exit 1; }
+      - name: Pull latest Docker image
+        env:
+          IMAGE_PATH: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
+        run: docker pull "${IMAGE_PATH}:main"
+      - name: Replace application container
+        env:
+          IMAGE_PATH: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+          LANGSMITH_TRACING: ${{ secrets.LANGSMITH_TRACING }}
+          LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
+        run: |
+          docker rm -f chatsgpt 2>/dev/null || true
           docker run -d \
-            --name agentic-chatbot \
-            --restart always \
+            --name chatsgpt \
+            --restart unless-stopped \
             -p 8080:8080 \
-            -e GOOGLE_API_KEY="${{ secrets.GOOGLE_API_KEY }}" \
-            -e GOOGLE_MODEL="${{ secrets.GOOGLE_MODEL }}" \
-            -e TAVILY_API_KEY="${{ secrets.TAVILY_API_KEY }}" \
-            -e LANGSMITH_TRACING="${{ secrets.LANGSMITH_TRACING }}" \
-            -e LANGSMITH_ENDPOINT="${{ secrets.LANGSMITH_ENDPOINT }}" \
-            -e LANGSMITH_API_KEY="${{ secrets.LANGSMITH_API_KEY }}" \
-            -e LANGSMITH_PROJECT="${{ secrets.LANGSMITH_PROJECT }}" \
-            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Clean unused Docker images
+            -v chatsgpt-data:/app/data \
+            -v chatsgpt-uploads:/app/uploads \
+            -v chatsgpt-chroma:/app/chroma_db \
+            -e GOOGLE_API_KEY \
+            -e TAVILY_API_KEY \
+            -e GEMINI_MODEL \
+            -e LANGSMITH_TRACING \
+            -e LANGSMITH_ENDPOINT \
+            -e LANGSMITH_API_KEY \
+            -e LANGSMITH_PROJECT \
+            "${IMAGE_PATH}:main"
+      - name: Verify application health
         run: |
-          docker image prune -f
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error http://localhost:8080/health; then
+              echo "ChatsGPT is healthy."
+              exit 0
+            fi
+            echo "Waiting for ChatsGPT to become ready..."
+            sleep 5
+          done
+          docker logs --tail 100 chatsgpt || true
+          exit 1
+      - name: Show recent application logs
+        if: always()
+        run: docker logs --tail 50 chatsgpt 2>/dev/null || true
+      - name: Remove unused Docker images
+        if: always()
+        run: docker image prune -f

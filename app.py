@@ -50,6 +50,12 @@ async def home(request:Request):
     )
 
 
+@app.get("/health")
+async def health():
+    """Container readiness endpoint used by the deployment workflow."""
+    return {"status": "ok"}
+
+
 @app.get("/conversations")
 async def conversations():
     items = list_conversations()
