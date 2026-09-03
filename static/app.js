@@ -1,6 +1,6 @@
 const $ = (selector) => document.querySelector(selector);
 const chatContainer = $("#chatContainer"), messageInput = $("#messageInput"), sendBtn = $("#sendBtn"), statusText = $("#status"), conversationList = $("#conversationList"), modelSelect = $("#modelSelect"), noticeText = $("#noticeText"), micBtn = $("#micBtn"), fileInput = $("#fileInput");
-let threadId = localStorage.getItem("thread_id") || crypto.randomUUID();
+let threadId = localStorage.getItem("thread_id") || `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;;
 let recognition, isDictating = false;
 localStorage.setItem("thread_id", threadId);
 const savedModel = localStorage.getItem("selected_model");
